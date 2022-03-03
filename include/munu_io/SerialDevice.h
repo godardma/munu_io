@@ -13,7 +13,8 @@ namespace munu {
  * It handles the coding and decoding of binary messages (encoding, checksum)
  * as well as the serial port itself (configuration and reception).
  */
-class SerialDevice : public AsyncDevice<boost::asio::serial_port>
+template <typename TimeSourceT = std::chrono::system_clock>
+class SerialDevice : public AsyncDevice<boost::asio::serial_port, TimeSourceT>
 {
     public:
 
@@ -64,14 +65,15 @@ class SerialDevice : public AsyncDevice<boost::asio::serial_port>
     void set_stopbits(Serial::stop_bits::type stopBits);
 };
 
-void SerialDevice::open(const std::string& device,
+template <typename T>
+void SerialDevice<T>::open(const std::string& device,
           unsigned int baudrate,
           unsigned int cSize,
           Serial::parity::type parity,
           Serial::flow_control::type flowCtl,
           Serial::stop_bits::type stopBits)
 {
-    device_.open(device);
+    this->device_.open(device);
 
     this->set_baudrate(baudrate);
     this->set_charsize(cSize);
@@ -82,9 +84,10 @@ void SerialDevice::open(const std::string& device,
     this->flush();
 }
 
-inline boost::system::error_code SerialDevice::flush(FlushType flushType)
+template <typename T>
+boost::system::error_code SerialDevice<T>::flush(FlushType flushType)
 {
-    if(::tcflush(device_.lowest_layer().native_handle(), flushType) == 0) {
+    if(::tcflush(this->device_.lowest_layer().native_handle(), flushType) == 0) {
         return boost::system::error_code();
     }
     else {
@@ -93,29 +96,34 @@ inline boost::system::error_code SerialDevice::flush(FlushType flushType)
     }
 }
 
-inline void SerialDevice::set_baudrate(unsigned int baudrate)
+template <typename T>
+void SerialDevice<T>::set_baudrate(unsigned int baudrate)
 {
-    device_.set_option(Serial::baud_rate(baudrate));
+    this->device_.set_option(Serial::baud_rate(baudrate));
 }
 
-inline void SerialDevice::set_charsize(unsigned int cSize)
+template <typename T>
+void SerialDevice<T>::set_charsize(unsigned int cSize)
 {
-    device_.set_option(Serial::character_size(cSize));
+    this->device_.set_option(Serial::character_size(cSize));
 }
 
-inline void SerialDevice::set_parity(Serial::parity::type parity)
+template <typename T>
+void SerialDevice<T>::set_parity(Serial::parity::type parity)
 {
-    device_.set_option(Serial::parity(parity));
+    this->device_.set_option(Serial::parity(parity));
 }
 
-inline void SerialDevice::set_flowcontrol(Serial::flow_control::type flowCtl)
+template <typename T>
+void SerialDevice<T>::set_flowcontrol(Serial::flow_control::type flowCtl)
 {
-    device_.set_option(Serial::flow_control(flowCtl));
+    this->device_.set_option(Serial::flow_control(flowCtl));
 }
 
-inline void SerialDevice::set_stopbits(Serial::stop_bits::type stopBits)
+template <typename T>
+void SerialDevice<T>::set_stopbits(Serial::stop_bits::type stopBits)
 {
-    device_.set_option(Serial::stop_bits(stopBits));
+    this->device_.set_option(Serial::stop_bits(stopBits));
 }
 
 }; //namespace munu

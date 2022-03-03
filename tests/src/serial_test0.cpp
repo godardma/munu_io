@@ -6,12 +6,17 @@ using namespace std;
 #include <munu_io/SerialDevice.h>
 using namespace munu;
 
-void callback(SerialDevice* serial,
+void callback(SerialDevice<>* serial,
               std::vector<char>* buf,
               const boost::system::error_code& err, size_t readCount)
 {
-    std::cout << "error : " << err << std::endl;
-    std::cout << "Got " << readCount << " bytes" << std::endl;
+    cout << std::chrono::duration_cast<std::chrono::seconds>(
+            serial->timestamp().time_since_epoch()).count() << endl;
+    //std::ostringstream oss;
+    //for(auto c : *buf) {
+    //    oss << c;
+    //}
+    //cout << oss.str();
     serial->async_read(buf->size(), buf->data(),
                        boost::bind(callback, serial, buf, _1, _2));
 }
@@ -23,7 +28,8 @@ int main()
     
     serial.open("/dev/ttyACM0", 115200);
 
-    std::vector<char> buf(32);
+    //std::vector<char> buf(32);
+    std::vector<char> buf(115200 / 8);
 
     serial.async_read(buf.size(), buf.data(),
                       boost::bind(callback, &serial, &buf, _1, _2));

@@ -14,6 +14,7 @@ target_link_libraries(munu_io INTERFACE
     Boost::system
     Boost::thread
 )
+target_compile_features(munu_io INTERFACE cxx_std_17)
 
 add_subdirectory(tests)
 
