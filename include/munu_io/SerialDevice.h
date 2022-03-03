@@ -7,12 +7,6 @@
 
 namespace munu {
 
-/**
- * This class handler low level serial communication with the USBL device.
- *
- * It handles the coding and decoding of binary messages (encoding, checksum)
- * as well as the serial port itself (configuration and reception).
- */
 template <template <typename,typename>class AsyncDeviceT = AsyncDeviceWritable,
           typename TimeSourceT = std::chrono::system_clock>
 class SerialDevice : public AsyncDeviceT<boost::asio::serial_port, TimeSourceT>
@@ -20,7 +14,7 @@ class SerialDevice : public AsyncDeviceT<boost::asio::serial_port, TimeSourceT>
     public:
 
     using Serial   = boost::asio::serial_port;
-    using BaseType = AsyncDeviceT<boost::asio::serial_port, TimeSourceT>;
+    using BaseType = AsyncDeviceT<Serial, TimeSourceT>;
 
     struct Parity {
         static constexpr const auto None = Serial::parity::none;
