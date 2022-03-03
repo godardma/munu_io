@@ -6,7 +6,7 @@ using namespace std;
 #include <munu_io/SerialDevice.h>
 using namespace munu;
 
-void callback(SerialDevice<>* serial,
+void read_callback(SerialDevice<>* serial,
               std::vector<char>* buf,
               const boost::system::error_code& err, size_t readCount)
 {
@@ -18,7 +18,14 @@ void callback(SerialDevice<>* serial,
     //}
     //cout << oss.str();
     serial->async_read(buf->size(), buf->data(),
-                       boost::bind(callback, serial, buf, _1, _2));
+                       boost::bind(read_callback, serial, buf, _1, _2));
+}
+
+void write_callback(SerialDevice<>* serial,
+                    const boost::system::error_code& err, size_t writeCount)
+{
+    cout << "Wrote " << writeCount << " bytes.\n" << std::flush;
+    serial->async_write("test", boost::bind(write_callback, serial, _1, _2));
 }
 
 int main()
@@ -32,7 +39,8 @@ int main()
     std::vector<char> buf(115200 / 8);
 
     serial.async_read(buf.size(), buf.data(),
-                      boost::bind(callback, &serial, &buf, _1, _2));
+                      boost::bind(read_callback, &serial, &buf, _1, _2));
+    serial.async_write("test", boost::bind(write_callback, &serial, _1, _2));
 
     service.start();
 

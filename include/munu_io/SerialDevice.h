@@ -3,7 +3,7 @@
 
 #include <boost/asio.hpp>
 
-#include <munu_io/AsyncDevice.h>
+#include <munu_io/AsyncDeviceWritable.h>
 
 namespace munu {
 
@@ -13,13 +13,14 @@ namespace munu {
  * It handles the coding and decoding of binary messages (encoding, checksum)
  * as well as the serial port itself (configuration and reception).
  */
-template <typename TimeSourceT = std::chrono::system_clock>
-class SerialDevice : public AsyncDevice<boost::asio::serial_port, TimeSourceT>
+template <template <typename,typename>class AsyncDeviceT = AsyncDeviceWritable,
+          typename TimeSourceT = std::chrono::system_clock>
+class SerialDevice : public AsyncDeviceT<boost::asio::serial_port, TimeSourceT>
 {
     public:
 
-    using Serial = boost::asio::serial_port;
-    using Base   = AsyncDevice<boost::asio::serial_port>;
+    using Serial   = boost::asio::serial_port;
+    using BaseType = AsyncDeviceT<boost::asio::serial_port, TimeSourceT>;
 
     struct Parity {
         static constexpr const auto None = Serial::parity::none;
@@ -47,7 +48,7 @@ class SerialDevice : public AsyncDevice<boost::asio::serial_port, TimeSourceT>
 
     public:
 
-    SerialDevice(boost::asio::io_service& service) : Base(service) {}
+    SerialDevice(boost::asio::io_service& service) : BaseType(service) {}
 
     void open(const std::string& device,
               unsigned int baudrate              = 115200,
@@ -65,8 +66,8 @@ class SerialDevice : public AsyncDevice<boost::asio::serial_port, TimeSourceT>
     void set_stopbits(Serial::stop_bits::type stopBits);
 };
 
-template <typename T>
-void SerialDevice<T>::open(const std::string& device,
+template <template<typename,typename>class D, typename T>
+void SerialDevice<D,T>::open(const std::string& device,
           unsigned int baudrate,
           unsigned int cSize,
           Serial::parity::type parity,
@@ -84,8 +85,8 @@ void SerialDevice<T>::open(const std::string& device,
     this->flush();
 }
 
-template <typename T>
-boost::system::error_code SerialDevice<T>::flush(FlushType flushType)
+template <template<typename,typename>class D, typename T>
+boost::system::error_code SerialDevice<D,T>::flush(FlushType flushType)
 {
     if(::tcflush(this->device_.lowest_layer().native_handle(), flushType) == 0) {
         return boost::system::error_code();
@@ -96,32 +97,32 @@ boost::system::error_code SerialDevice<T>::flush(FlushType flushType)
     }
 }
 
-template <typename T>
-void SerialDevice<T>::set_baudrate(unsigned int baudrate)
+template <template<typename,typename>class D, typename T>
+void SerialDevice<D,T>::set_baudrate(unsigned int baudrate)
 {
     this->device_.set_option(Serial::baud_rate(baudrate));
 }
 
-template <typename T>
-void SerialDevice<T>::set_charsize(unsigned int cSize)
+template <template<typename,typename>class D, typename T>
+void SerialDevice<D,T>::set_charsize(unsigned int cSize)
 {
     this->device_.set_option(Serial::character_size(cSize));
 }
 
-template <typename T>
-void SerialDevice<T>::set_parity(Serial::parity::type parity)
+template <template<typename,typename>class D, typename T>
+void SerialDevice<D,T>::set_parity(Serial::parity::type parity)
 {
     this->device_.set_option(Serial::parity(parity));
 }
 
-template <typename T>
-void SerialDevice<T>::set_flowcontrol(Serial::flow_control::type flowCtl)
+template <template<typename,typename>class D, typename T>
+void SerialDevice<D,T>::set_flowcontrol(Serial::flow_control::type flowCtl)
 {
     this->device_.set_option(Serial::flow_control(flowCtl));
 }
 
-template <typename T>
-void SerialDevice<T>::set_stopbits(Serial::stop_bits::type stopBits)
+template <template<typename,typename>class D, typename T>
+void SerialDevice<D,T>::set_stopbits(Serial::stop_bits::type stopBits)
 {
     this->device_.set_option(Serial::stop_bits(stopBits));
 }

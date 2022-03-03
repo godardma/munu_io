@@ -18,9 +18,6 @@ class AsyncDevice
 {
     public:
 
-    // using Ptr      = std::shared_ptr<AsyncDevice>;
-    // using ConstPtr = std::shared_ptr<const AsyncDevice>;
-
     using Device = DeviceT;
     using TimeSource = TimeSourceT;
     using TimePoint  = typename std::invoke_result<decltype(&TimeSource::now)>::type;
@@ -40,7 +37,6 @@ class AsyncDevice
                        const boost::system::error_code& err,
                        size_t readCount);
     void async_read(size_t count, char* dst, const AsyncHandler& handler);
-
     size_t read(size_t count, char* dst);
 
     TimePoint timestamp() const { return stamp_; }
