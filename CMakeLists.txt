@@ -16,7 +16,7 @@ list(APPEND munu_io_headers
 
 add_library(munu_io INTERFACE)
 set_target_properties(munu_io PROPERTIES
-    RTAC_PUBLIC_HEADERS "${munu_io_headers}"
+    INTERFACE_PUBLIC_HEADER "${munu_io_headers}"
 )
 target_include_directories(munu_io INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

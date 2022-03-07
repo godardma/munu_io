@@ -2,8 +2,6 @@
 
 include(CMakeFindDependencyMacro)
 
-include(${CMAKE_CURRENT_LIST_DIR}/rtac_installation.cmake)
-
 find_package(Boost COMPONENTS system thread REQUIRED)
 message(STATUS "Boost version  : ${Boost_VERSION}")
 message(STATUS "Boost location : ${Boost_INCLUDE_DIRS}")
