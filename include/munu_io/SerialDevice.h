@@ -45,8 +45,8 @@ class SerialDevice : public AsyncDeviceT<boost::asio::serial_port, TimeSourceT>
 
     protected:
 
-    virtual void data_received(unsigned int count);
-    virtual void data_flushed(unsigned int count);
+    //virtual void data_received(unsigned int count);
+    //virtual void data_flushed(unsigned int count);
 
     public:
 
@@ -70,18 +70,18 @@ class SerialDevice : public AsyncDeviceT<boost::asio::serial_port, TimeSourceT>
     unsigned int baudrate() const;
 };
 
-template <template<typename,typename>class D, typename T>
-void SerialDevice<D,T>::data_received(unsigned int count)
-{
-    this->stamp_ = TimeSource::now()
-                 - std::chrono::microseconds(1000000*count / this->baudrate());
-}
-
-template <template<typename,typename>class D, typename T>
-void SerialDevice<D,T>::data_flushed(unsigned int count)
-{
-    this->stamp_ += std::chrono::microseconds(1000000*count / this->baudrate());
-}
+// template <template<typename,typename>class D, typename T>
+// void SerialDevice<D,T>::data_received(unsigned int count)
+// {
+//     this->stamp_ = TimeSource::now()
+//                  - std::chrono::microseconds(1000000*count / this->baudrate());
+// }
+// 
+// template <template<typename,typename>class D, typename T>
+// void SerialDevice<D,T>::data_flushed(unsigned int count)
+// {
+//     this->stamp_ += std::chrono::microseconds(1000000*count / this->baudrate());
+// }
 
 template <template<typename,typename>class D, typename T>
 void SerialDevice<D,T>::open(const std::string& device,

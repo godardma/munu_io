@@ -20,8 +20,7 @@ class AsyncDevice
 
     using Device = DeviceT;
     using TimeSource = TimeSourceT;
-    //using TimePoint  = typename std::invoke_result<decltype(&TimeSource::now)>::type;
-    using TimePoint  = typename TimeSource::time_point;
+    using TimePoint  = typename std::invoke_result<decltype(&TimeSource::now)>::type;
     
     using ReadCallback      = boost::function<void(const boost::system::error_code&, size_t)>;
     using ReadUntilCallback = boost::function<void(const boost::system::error_code&,
