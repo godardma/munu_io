@@ -20,36 +20,41 @@ class AsyncDevice
 
     using Device = DeviceT;
     using TimeSource = TimeSourceT;
-    using TimePoint  = typename std::invoke_result<decltype(&TimeSource::now)>::type;
+    //using TimePoint  = typename std::invoke_result<decltype(&TimeSource::now)>::type;
+    using TimePoint  = typename TimeSource::time_point;
     
-    using AsyncHandler = boost::function<void(const boost::system::error_code&, size_t)>;
-    using StreamBuffer = boost::asio::streambuf;
+    using ReadCallback      = boost::function<void(const boost::system::error_code&, size_t)>;
+    using ReadUntilCallback = boost::function<void(const boost::system::error_code&,
+                                                   const std::string&)>;
+    using StreamBuffer      = boost::asio::streambuf;
 
     protected:
 
-    Device       device_;
-    TimePoint    stamp_;
-    StreamBuffer readBuffer_;
+    Device             device_;
+    TimePoint          stamp_;
+    StreamBuffer       recvBuffer_;
+    std::ostringstream outputBuffer_;
 
-    template <typename StreamT>
-    std::pair<bool,unsigned int> read_buffer_until(char delimiter, StreamT& dst);
+    virtual void data_received(unsigned int count) { stamp_ = TimeSource::now(); }
+    virtual void data_flushed(unsigned int count)  {}
+
+    bool read_buffer_until(char delimiter);
 
     public:
 
     AsyncDevice(boost::asio::io_service& service);
-
-    void read_callback(const AsyncHandler& handler,
+    
+    // These read a fixed number of characters
+    void read_callback(const ReadCallback& handler,
                        const boost::system::error_code& err,
                        size_t readCount);
-    void async_read(size_t count, char* dst, const AsyncHandler& handler);
+    void async_read(size_t count, char* dst, const ReadCallback& handler);
     size_t read(size_t count, char* dst);
     
-    template <typename StreamT>
-    void async_read_until(char delimiter, StreamT* dst, const AsyncHandler& handler);
-    template <typename StreamT>
+    // These read until finding a delimiter (std::string only)
+    void async_read_until(char delimiter, const ReadUntilCallback& handler);
     void read_until_callback(char delimiter,
-                             StreamT* dst,
-                             const AsyncHandler& handler,
+                             const ReadUntilCallback& handler,
                              const boost::system::error_code& err,
                              size_t readCount);
 
@@ -67,17 +72,17 @@ AsyncDevice<D,T>::AsyncDevice(boost::asio::io_service& service) :
  * called.
  */
 template <typename D,typename T>
-void AsyncDevice<D,T>::read_callback(const AsyncHandler& handler,
+void AsyncDevice<D,T>::read_callback(const ReadCallback& handler,
                                      const boost::system::error_code& err,
                                      size_t readCount)
 {
-    stamp_ = TimeSource::now();
+    this->data_received(readCount);
     handler(err, readCount);
 }
 
 template <typename D,typename T>
 void AsyncDevice<D,T>::async_read(size_t count, char* dst,
-                                  const AsyncHandler& handler)
+                                  const ReadCallback& handler)
 {
     boost::asio::async_read(device_, boost::asio::buffer(dst, count),
         boost::bind(&AsyncDevice<D,T>::read_callback, this, handler, _1, _2));
@@ -93,62 +98,63 @@ size_t AsyncDevice<D,T>::read(size_t count, char* dst)
 }
 
 
-template <typename D,typename T> template <typename StreamT>
-std::pair<bool,unsigned int> AsyncDevice<D,T>::read_buffer_until(char delimiter, StreamT& dst)
+template <typename D,typename T>
+bool AsyncDevice<D,T>::read_buffer_until(char delimiter)
 {
-    std::istream is(&readBuffer_);
+    std::istream is(&recvBuffer_);
     unsigned int count = 0;
     char c = is.get();
     while(!is.eof()) {
-        //std::cout << c << std::flush;
-        dst << c;
+        outputBuffer_ << c;
         count++;
         if(c == delimiter)
-            return std::make_pair(true, count);
+            return true;
         c = is.get();
     }
 
-    return std::make_pair(false, count);
+    return false;
 }
 
-template <typename D,typename T> template <typename StreamT>
+template <typename D,typename T>
 void AsyncDevice<D,T>::async_read_until(char delimiter,
-                                        StreamT* dst,
-                                        const AsyncHandler& handler)
+                                        const ReadUntilCallback& handler)
 {
     // First checking the read buffer (enough data might be already in there
-    auto res = this->read_buffer_until(delimiter, *dst);
-    if(res.first) {
-        handler(boost::system::error_code(), res.second);
+    outputBuffer_.str("");
+    outputBuffer_.clear();
+    if(this->read_buffer_until(delimiter)) {
+        this->data_flushed(outputBuffer_.str().size());
+        handler(boost::system::error_code(), outputBuffer_.str());
     }
     else {
-        boost::asio::async_read_until(device_, readBuffer_, delimiter,
-            boost::bind(&AsyncDevice<D,T>::read_until_callback<StreamT>, this,
-                        delimiter, dst,
-                        handler, _1, _2));
+        boost::asio::async_read_until(device_, recvBuffer_, delimiter,
+            boost::bind(&AsyncDevice<D,T>::read_until_callback, this,
+                        delimiter, handler, _1, _2));
     }
 }
 
-template <typename D,typename T> template <typename StreamT>
+template <typename D,typename T>
 void AsyncDevice<D,T>::read_until_callback(char delimiter, 
-                                           StreamT* dst,
-                                           const AsyncHandler& handler,
+                                           const ReadUntilCallback& handler,
                                            const boost::system::error_code& err,
                                            size_t readCount)
 {
     if(err) {
-        handler(err, readCount);
+        handler(err, std::string());
         return;
     }
-    auto res = this->read_buffer_until(delimiter, *dst);
-    if(res.first) {
+    if(readCount > 0) {
+        this->data_received(recvBuffer_.size());
+    }
+    if(this->read_buffer_until(delimiter)) {
         // got data, calling handler
-        handler(err, res.second);
+        this->data_flushed(outputBuffer_.str().size());
+        handler(err, outputBuffer_.str());
     }
     else {
         // delimiter was not found in received data but no error was returned
         // by boost. This won't probably happen (I think...)
-        handler(err, 0);
+        handler(err, std::string());
     }
 }
 

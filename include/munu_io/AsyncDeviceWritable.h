@@ -11,22 +11,22 @@ class AsyncDeviceWritable : public AsyncDevice<DeviceT, TimeSourceT>
 {
     public:
 
-    using BaseType     = AsyncDevice<DeviceT, TimeSourceT>;
-    using Device       = typename BaseType::Device;
-    using AsyncHandler = typename BaseType::AsyncHandler;
+    using BaseType      = AsyncDevice<DeviceT, TimeSourceT>;
+    using Device        = typename BaseType::Device;
+    using WriteCallback = boost::function<void(const boost::system::error_code&, size_t)>;
 
     public:
 
     AsyncDeviceWritable(boost::asio::io_service& service) : BaseType(service) {}
 
-    void async_write(size_t count, const char* data, const AsyncHandler& handler);
-    void async_write(const std::string& data, const AsyncHandler& handler);
+    void async_write(size_t count, const char* data, const WriteCallback& handler);
+    void async_write(const std::string& data, const WriteCallback& handler);
 };
 
 template <typename D, typename T>
 void AsyncDeviceWritable<D,T>::async_write(size_t count,
                                            const char* data,
-                                           const AsyncHandler& handler)
+                                           const WriteCallback& handler)
 {
     // Check if wrte completed
     boost::asio::async_write(this->device_, boost::asio::buffer(data, count), handler);
@@ -34,7 +34,7 @@ void AsyncDeviceWritable<D,T>::async_write(size_t count,
 
 template <typename D, typename T>
 void AsyncDeviceWritable<D,T>::async_write(const std::string& data,
-                                           const AsyncHandler& handler)
+                                           const WriteCallback& handler)
 {
     this->async_write(data.size(), data.c_str(), handler);
 }

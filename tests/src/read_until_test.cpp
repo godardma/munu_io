@@ -11,16 +11,13 @@ using DeviceType = SerialDevice<>;
 //using DeviceType = ClientTCP<>;
 
 void read_callback(DeviceType* device,
-                   std::ostringstream* oss,
-                   const boost::system::error_code& err, size_t readCount)
+                   const boost::system::error_code& err,
+                   const std::string& data)
 {
-    cout << readCount << " "
-         << std::chrono::duration_cast<std::chrono::seconds>(
+    cout << std::chrono::duration_cast<std::chrono::seconds>(
             device->timestamp().time_since_epoch()).count() << endl;
-    cout << oss->str().size() << " : " << oss->str() << endl << endl << flush;
-    oss->str("");
-    oss->clear();
-    device->async_read_until('\n', oss, boost::bind(read_callback, device, oss, _1, _2));
+    cout << data.size() << " : " << data << endl << endl << flush;
+    device->async_read_until('\n', boost::bind(read_callback, device, _1, _2));
 }
 
 int main()
@@ -32,7 +29,7 @@ int main()
     //device.open("127.0.0.1", 28334);
     
     std::ostringstream oss;
-    device.async_read_until('\n', &oss, boost::bind(read_callback, &device, &oss, _1, _2));
+    device.async_read_until('\n', boost::bind(read_callback, &device, _1, _2));
 
     service.start();
 

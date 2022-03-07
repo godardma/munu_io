@@ -16,6 +16,9 @@ class SerialDevice : public AsyncDeviceT<boost::asio::serial_port, TimeSourceT>
     using Serial   = boost::asio::serial_port;
     using BaseType = AsyncDeviceT<Serial, TimeSourceT>;
 
+    using TimeSource = typename BaseType::TimeSource;
+    using TimePoint  = typename BaseType::TimePoint;
+
     struct Parity {
         static constexpr const auto None = Serial::parity::none;
         static constexpr const auto Odd  = Serial::parity::odd;
@@ -40,6 +43,11 @@ class SerialDevice : public AsyncDeviceT<boost::asio::serial_port, TimeSourceT>
         FlushBoth    = TCIOFLUSH
     };
 
+    protected:
+
+    virtual void data_received(unsigned int count);
+    virtual void data_flushed(unsigned int count);
+
     public:
 
     SerialDevice(boost::asio::io_service& service) : BaseType(service) {}
@@ -58,7 +66,22 @@ class SerialDevice : public AsyncDeviceT<boost::asio::serial_port, TimeSourceT>
     void set_parity(Serial::parity::type parity);
     void set_flowcontrol(Serial::flow_control::type flowCtl);
     void set_stopbits(Serial::stop_bits::type stopBits);
+
+    unsigned int baudrate() const;
 };
+
+template <template<typename,typename>class D, typename T>
+void SerialDevice<D,T>::data_received(unsigned int count)
+{
+    this->stamp_ = TimeSource::now()
+                 - std::chrono::microseconds(1000000*count / this->baudrate());
+}
+
+template <template<typename,typename>class D, typename T>
+void SerialDevice<D,T>::data_flushed(unsigned int count)
+{
+    this->stamp_ += std::chrono::microseconds(1000000*count / this->baudrate());
+}
 
 template <template<typename,typename>class D, typename T>
 void SerialDevice<D,T>::open(const std::string& device,
@@ -119,6 +142,14 @@ template <template<typename,typename>class D, typename T>
 void SerialDevice<D,T>::set_stopbits(Serial::stop_bits::type stopBits)
 {
     this->device_.set_option(Serial::stop_bits(stopBits));
+}
+
+template <template<typename,typename>class D, typename T>
+unsigned int SerialDevice<D,T>::baudrate() const
+{   
+    Serial::baud_rate baudrate;
+    this->device_.get_option(baudrate);
+    return baudrate.value();
 }
 
 }; //namespace munu
