@@ -21,6 +21,10 @@ class AsyncDeviceWritable : public AsyncDevice<DeviceT, TimeSourceT>
 
     void async_write(size_t count, const char* data, const WriteCallback& handler);
     void async_write(const std::string& data, const WriteCallback& handler);
+    
+    // synchronous operation
+    size_t write(size_t count, const char* data);
+    size_t write(const std::string& data);
 };
 
 template <typename D, typename T>
@@ -38,6 +42,20 @@ void AsyncDeviceWritable<D,T>::async_write(const std::string& data,
 {
     this->async_write(data.size(), data.c_str(), handler);
 }
+
+template <typename D, typename T>
+size_t AsyncDeviceWritable<D,T>::write(size_t count, const char* data)
+{
+    // Check if wrte completed
+    return boost::asio::write(this->device_, boost::asio::buffer(data, count));
+}
+
+template <typename D, typename T>
+size_t AsyncDeviceWritable<D,T>::write(const std::string& data)
+{
+    return this->write(data.size(), data.c_str());
+}
+
 
 }; //namespace munu
 
