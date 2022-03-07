@@ -1,8 +1,15 @@
 
-add_executable(device_test0
-    src/test0.cpp
+# add_executable(device_test0
+#     src/test0.cpp
+# )
+# target_link_libraries(device_test0 PRIVATE
+#     munu_io
+# )
+
+add_executable(read_until_test
+    src/read_until_test.cpp
 )
-target_link_libraries(device_test0 PRIVATE
+target_link_libraries(read_until_test PRIVATE
     munu_io
 )
 
