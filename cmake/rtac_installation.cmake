@@ -70,12 +70,7 @@ function(rtac_install_target TARGET_NAME)
 	)
 
     # Installing header files
-    get_target_property(TARGET_TYPE_VALUE ${TARGET_NAME} TYPE)
-    if(${TARGET_TYPE_VALUE} STREQUAL "INTERFACE_LIBRARY")
-        get_target_property(HEADER_FILES ${TARGET_NAME} INTERFACE_PUBLIC_HEADER)
-    else()
-        get_target_property(HEADER_FILES ${TARGET_NAME} RTAC_PUBLIC_HEADERS)
-    endif()
+    get_target_property(HEADER_FILES ${TARGET_NAME} RTAC_PUBLIC_HEADERS)
     if(NOT "${HEADER_FILES}" STREQUAL "HEADER_FILES-NOTFOUND")
         # message(STATUS "HEADER_FILES : ${HEADER_FILES}")
         foreach(header ${HEADER_FILES})
