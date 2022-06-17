@@ -11,6 +11,7 @@ list(APPEND munu_io_headers
     include/munu_io/AsyncService.h
     include/munu_io/ClientTCP.h
     include/munu_io/SerialDevice.h
+    include/munu_io/codecs.h
 )
 
 
